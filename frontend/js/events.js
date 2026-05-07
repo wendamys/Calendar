@@ -76,6 +76,31 @@ async function loadEventsForUser(userId) {
   }
 }
 
+async function loadEventsForSelectedUsers() {
+  if (activeUserIds.length === 0) {
+    await loadEventsForUser(currentUser ? currentUser.id : null);
+    return;
+  }
+
+  const allEvents = {};
+
+  for (const userId of activeUserIds) {
+    try {
+      const apiEvents = await fetchEvents(userId, currentYear, currentMonth);
+      const userCache = transformEventsToCache(apiEvents);
+
+      for (const dateKey in userCache) {
+        if (!allEvents[dateKey]) allEvents[dateKey] = [];
+        allEvents[dateKey].push(...userCache[dateKey]);
+      }
+    } catch (error) {
+      console.error(`Ошибка загрузки событий для пользователя ${userId}:`, error);
+    }
+  }
+
+  currentEventsCache = allEvents;
+}
+
 async function loadAllFriendsEventsCount() {
   if (!users || users.length === 0 || !currentUser) return;
 

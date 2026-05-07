@@ -1,11 +1,11 @@
 // ---------- API КОНФИГУРАЦИЯ ----------
-const API_BASE_URL = window.location.origin + '/api';
-const WS_URL = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws';
+const API_BASE_URL = 'http://127.0.0.1:8000';
+const WS_URL = 'ws://127.0.0.1:8000/ws';
 
 // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
 let currentUser = null;
 let users = [];
-let activeUserId = null;
+let activeUserIds = []; // Массив выбранных друзей
 let currentYear, currentMonth, selectedDate = null;
 let editingEventId = null;
 
@@ -16,7 +16,6 @@ let currentTimeTo = "23:59";
 let currentEventsCache = {};
 let friendsEventsCountCache = {};
 let ws = null;
-// searchQuery теперь в search.js
 let currentTheme = localStorage.getItem('theme') || 'light';
 
 // Цветовые категории событий

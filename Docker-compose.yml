@@ -1,10 +1,50 @@
 version: '3.8'
 
 services:
-  # База данных
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: calendar_zookeeper
+    networks:
+      - kafka-net
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: calendar_kafka
+    networks:
+      - kafka-net
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      - kafka-net
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+
+
+  # 3. База данных
   db:
     image: postgres:15-alpine
     container_name: calendar_db
+    networks: # Добавил сеть, чтобы бэкенд видел БД
+      - kafka-net
     environment:
       POSTGRES_USER: calendar_user
       POSTGRES_PASSWORD: calendar_pass
@@ -20,32 +60,43 @@ services:
       timeout: 5s
       retries: 5
 
-  # Бэкенд
+  # 4. Бэкенд (Продюсер)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: calendar_backend
+    networks:
+      - kafka-net
     environment:
       DATABASE_URL: postgresql://calendar_user:calendar_pass@db:5432/calendar_db
+      KAFKA_URL: kafka:9092 # Передаем адрес кафки в код
     depends_on:
       db:
         condition: service_healthy
+      kafka:
+        condition: service_started
     ports:
       - "8000:8000"
     restart: unless-stopped
 
-  # Фронтенд
+  # 5. Фронтенд
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: calendar_frontend
+    networks:
+      - kafka-net
     ports:
       - "80:80"
     depends_on:
       - backend
     restart: unless-stopped
+
+networks:
+  kafka-net:
+    external: true
 
 volumes:
   postgres_data:

@@ -1,14 +1,22 @@
 import datetime
-from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
-from database import get_db, engine
+import json
 import models
+import os
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from database import get_db, engine
+from aiokafka import AIOKafkaProducer
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_URL", "kafka:9092")
+KAFKA_TOPIC = "calendar_events"
+
+producer = AIOKafkaProducer(bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS)
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,18 +47,40 @@ class EventSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
+@app.on_event("startup")
+async def startup_event():
+    await producer.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await producer.stop()
+
+@app.post("/send-event")
+async def send_event(message: dict, user_id: int):
+    message["user_id"] = user_id
+    playload = json.dumps(message).encode("utf-8")
+    await producer.send_and_wait(KAFKA_TOPIC, playload)
+    return {"status": "Sent", "user_id_included": user_id}
 @app.get("/events")
 def get_all_events(db = Depends(get_db)):
     events = db.query(models.Event).all()
     return events
 
 @app.post("/events")
-def insert_event(event: EventSchema, db = Depends(get_db)):
+async def insert_event(event: EventSchema, db = Depends(get_db)):
     new_event = models.Event(**event.model_dump())
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
+    kafka_date = {
+        "name": new_event.name,
+        "user_id": new_event.user_id
+    }
+    payload = json.dumps(kafka_date).encode("utf-8")
+    await producer.send_and_wait(KAFKA_TOPIC, payload)
     return new_event
+
 
 @app.put("/events/{event_id}")
 def change_event(event_id: int, update_data: EventSchema, db = Depends(get_db)):
@@ -77,7 +107,7 @@ def delete_event(event_id: int, db = Depends(get_db)):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()  # Принимаем соединение
+    await websocket.accept()
     try:
         while True:
             data = await websocket.receive_text()
@@ -89,7 +119,7 @@ async def websocket_endpoint(websocket: WebSocket):
 def all_users(db = Depends(get_db)):
     user = db.query(models.User).all()
     return user
-@app.post("/user")
+@app.post("/users")
 def add_user(user: UserSchema, db = Depends(get_db)):
     new_user = models.User(**user.model_dump())
     db.add(new_user)
@@ -98,9 +128,8 @@ def add_user(user: UserSchema, db = Depends(get_db)):
     return new_user
 
 
-
 @app.put("/users/{user_id}")
-def change_user(user_id: int, update_data: UserSchema, db=Depends(get_db)):
+def update_user(user_id: int, update_data: UserSchema, db=Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -120,9 +149,7 @@ def delete_user(user_id: int, db=Depends(get_db)):
     if not user_to_delete:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Удаляем все события пользователя
     db.query(models.Event).filter(models.Event.user_id == user_id).delete()
-    # Удаляем пользователя
     db.delete(user_to_delete)
     db.commit()
 

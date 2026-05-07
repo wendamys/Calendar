@@ -18,12 +18,14 @@ function openModal(dateObj) {
     `📅 ${selectedDate.getDate()} ${monthShort[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
 
   const select = document.getElementById('modalFriendSelect');
-  select.value = activeUserId ? activeUserId : 'me';
+  select.value = activeUserIds.length === 1 ? activeUserIds[0] : 'me';
 
   const friendSelector = document.querySelector('.friend-selector');
   const addEventSection = document.querySelector('.add-event-modal');
 
-  if (activeUserId) {
+  const isViewingFriend = activeUserIds.length > 0;
+
+  if (isViewingFriend) {
     friendSelector.style.display = 'none';
     addEventSection.style.display = 'none';
   } else {
@@ -68,12 +70,16 @@ function renderModalEvents() {
   events = filterEventsBySearch(events);
 
   let friendHeader = '';
-  if (activeUserId) {
-    const friend = users.find(u => u.id === activeUserId);
-    if (friend) {
+  if (activeUserIds.length > 0) {
+    const friendNames = activeUserIds.map(id => {
+      const friend = users.find(u => u.id === id);
+      return friend ? `${escapeHtml(friend.first_name)} ${escapeHtml(friend.last_name)}` : '';
+    }).filter(Boolean);
+
+    if (friendNames.length > 0) {
       friendHeader = `
         <div style="background: #eef2ff; padding: 0.8rem; border-radius: 0.8rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-          <span>📋 События: <strong>${escapeHtml(friend.first_name)} ${escapeHtml(friend.last_name)}</strong></span>
+          <span>📋 События: <strong>${friendNames.join(', ')}</strong></span>
           <button id="backToMyEventsBtn" style="background: #4f46e5; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 1rem; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
             ← Мои события
           </button>
@@ -81,6 +87,8 @@ function renderModalEvents() {
       `;
     }
   }
+
+  const isViewingFriend = activeUserIds.length > 0;
 
   if (events.length === 0) {
     container.innerHTML = friendHeader + '<div class="empty-events">✨ Нет событий</div>';
@@ -96,6 +104,8 @@ function renderModalEvents() {
         timeDisplay = `${startStr} – ${endStr}`;
       } else if (startStr !== '—' && endStr === '—') {
         timeDisplay = `${startStr} (без окончания)`;
+      } else if (startStr === '—' && endStr !== '—') {
+        timeDisplay = `до ${endStr}`;
       } else {
         timeDisplay = '⏳ время не указано';
       }
@@ -121,7 +131,7 @@ function renderModalEvents() {
           </div>
           <div class="event-time-range">🕒 ${timeDisplay}</div>
         </div>
-        ${!activeUserId ? `
+        ${!isViewingFriend ? `
           <div style="display: flex; gap: 4px;">
             <button class="edit-event-modal" data-id="${ev.id}" style="background: none; border: none; color: #4f46e5; cursor: pointer; font-size: 1.2rem;" title="Редактировать">✏️</button>
             <button class="delete-event-modal" data-id="${ev.id}" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;" title="Удалить">🗑</button>
@@ -129,7 +139,7 @@ function renderModalEvents() {
         ` : ''}
       `;
 
-      if (!activeUserId) {
+      if (!isViewingFriend) {
         div.querySelector('.edit-event-modal').addEventListener('click', (e) => {
           e.stopPropagation();
           startEditEvent(ev);
@@ -149,10 +159,10 @@ function renderModalEvents() {
 
   const backBtn = document.getElementById('backToMyEventsBtn');
   if (backBtn) {
-    backBtn.addEventListener('click', () => deselectFriend());
+    backBtn.addEventListener('click', () => deselectAllFriends());
   }
 
-  if (!activeUserId) {
+  if (!isViewingFriend) {
     const addBtn = document.getElementById('modalAddEventBtn');
     const newBtn = addBtn.cloneNode(true);
     addBtn.parentNode.replaceChild(newBtn, addBtn);
@@ -163,7 +173,6 @@ function renderModalEvents() {
       let end = document.getElementById('modalEventEnd').value;
 
       if (!title) { showValidation('modalEventTitle', 'Введите название'); return; }
-      if (!start) { showValidation('modalEventStart', 'Укажите время начала'); return; }
 
       if (start && end) {
         let startMin = getMinutes(start), endMin = getMinutes(end);
@@ -225,9 +234,7 @@ function renderModalEvents() {
             friendsEventsCountCache[cacheKey]++;
           }
 
-          let toastMsg = `✅ Добавлено "${title}"`;
-          if (!end) toastMsg += ' (без окончания)';
-          showToast(toastMsg);
+          showToast(`✅ Добавлено "${title}"`);
         }
 
         refreshFutureCache();

@@ -16,9 +16,7 @@ function updateCurrentUserDisplay() {
     displayElement.onclick = async () => {
       await renderUserListModal();
       document.getElementById('switchUserModal').classList.add('active');
-      setTimeout(() => {
-        document.getElementById('newUserFirstName').focus();
-      }, 300);
+      setTimeout(() => document.getElementById('newUserFirstName').focus(), 300);
     };
   }
 }
@@ -32,7 +30,7 @@ async function switchUser(userId) {
     }
 
     currentUser = user;
-    activeUserId = null;
+    activeUserIds = [];
 
     localStorage.setItem('currentUserId', user.id);
 
@@ -54,7 +52,6 @@ async function switchUser(userId) {
   }
 }
 
-// ---------- РЕДАКТИРОВАНИЕ ПОЛЬЗОВАТЕЛЯ ----------
 async function editUser(userId) {
   const user = users.find(u => u.id === userId);
   if (!user) return;
@@ -73,9 +70,7 @@ async function editUser(userId) {
   addBtn.dataset.editUserId = userId;
 
   document.getElementById('switchUserModal').classList.add('active');
-  setTimeout(() => {
-    document.getElementById('newUserFirstName').focus();
-  }, 300);
+  setTimeout(() => document.getElementById('newUserFirstName').focus(), 300);
 }
 
 async function removeUser(userId) {
@@ -104,9 +99,7 @@ async function removeUser(userId) {
       }
     }
 
-    if (activeUserId === userId) {
-      activeUserId = null;
-    }
+    activeUserIds = activeUserIds.filter(id => id !== userId);
 
     showToast(`🗑 Пользователь "${user.first_name}" удалён`);
 
@@ -122,7 +115,6 @@ async function removeUser(userId) {
   }
 }
 
-// ---------- ОТРИСОВКА СПИСКА ПОЛЬЗОВАТЕЛЕЙ ----------
 async function renderUserListModal() {
   const list = document.getElementById('userListModal');
 
@@ -172,16 +164,13 @@ async function renderUserListModal() {
 async function addNewUser(firstName, lastName) {
   try {
     const newUser = await createUser(firstName, lastName);
-
     users.push(newUser);
-
     await switchUser(newUser.id);
 
     showToast(`✅ Пользователь ${newUser.first_name} создан`);
 
     document.getElementById('newUserFirstName').value = '';
     document.getElementById('newUserLastName').value = '';
-
     await renderUserListModal();
   } catch (error) {
     console.error('Ошибка создания пользователя:', error);

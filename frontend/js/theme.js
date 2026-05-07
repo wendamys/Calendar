@@ -1,8 +1,6 @@
 // ---------- ТЕМА ----------
 function initTheme() {
-  if (currentTheme === 'dark') {
-    document.body.classList.add('dark-theme');
-  }
+  if (currentTheme === 'dark') document.body.classList.add('dark-theme');
 }
 
 function toggleTheme() {
@@ -18,8 +16,7 @@ function setupRealTimeValidation() {
   const endInput = document.getElementById('modalEventEnd');
 
   titleInput.addEventListener('input', () => {
-    const title = titleInput.value.trim();
-    if (title.length > 0) clearValidation('modalEventTitle');
+    if (titleInput.value.trim().length > 0) clearValidation('modalEventTitle');
   });
 
   startInput.addEventListener('change', () => {
@@ -67,7 +64,6 @@ function clearValidation(fieldId) {
   const field = document.getElementById(fieldId);
   field.style.borderColor = '#cbd5e1';
   field.style.background = 'white';
-
   const errorDiv = field.parentElement.querySelector('.validation-error');
   if (errorDiv) errorDiv.remove();
 }

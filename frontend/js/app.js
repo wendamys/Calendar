@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('nextMonthBtn').onclick = nextMonth;
   document.getElementById('applySearchBtn').onclick = () => updateAllFutureHighlight();
 
-  // Валидация времени
   document.getElementById('searchTimeFrom').addEventListener('change', function() {
     const timeFrom = this.value;
     const timeToInput = document.getElementById('searchTimeTo');
@@ -44,13 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('searchTimeTo').min = document.getElementById('searchTimeFrom').value;
 
-  // Поиск
   const searchUI = createSearchUI();
   const friendsPanel = document.querySelector('.friends-panel');
   const friendsList = document.getElementById('friendsList');
   friendsPanel.insertBefore(searchUI, friendsList);
 
-  // Модальное окно событий
   const modal = document.getElementById('eventModal');
   document.getElementById('closeModalBtn').onclick = () => {
     modal.classList.remove('active');
@@ -75,27 +72,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('addFriendBtn').style.display = 'none';
   document.getElementById('addFriendForm').style.display = 'none';
 
-  document.getElementById('deselectFriendBtn').onclick = () => deselectFriend();
+  document.getElementById('deselectFriendBtn').onclick = () => deselectAllFriends();
 
   document.getElementById('modalFriendSelect').addEventListener('change', async (e) => {
     const value = e.target.value;
     if (value === 'me') {
-      await deselectFriend();
+      await deselectAllFriends();
     } else {
       await selectFriend(parseInt(value));
     }
   });
 
-  // Смена пользователя
   document.getElementById('switchUserBtn').onclick = async () => {
     await renderUserListModal();
     document.getElementById('switchUserModal').classList.add('active');
   };
 
-  // Закрытие модального окна пользователей
   const closeSwitchModal = () => {
     document.getElementById('switchUserModal').classList.remove('active');
-    // Сбрасываем режим редактирования
     const addBtn = document.getElementById('addNewUserBtn');
     const modalTitle = document.querySelector('#switchUserModal .modal-header h3');
     const addSectionTitle = document.querySelector('.add-user-section h4');
@@ -120,7 +114,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       closeSwitchModal();
   });
 
-  // Кнопка добавления/редактирования пользователя
   document.getElementById('addNewUserBtn').addEventListener('click', async function() {
     const mode = this.dataset.mode || 'add';
     const editUserId = this.dataset.editUserId;
@@ -161,7 +154,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Кнопка смены темы
   const themeBtn = document.createElement('button');
   themeBtn.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
   themeBtn.style.cssText = 'position: fixed; bottom: 20px; left: 20px; background: #1e293b; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
@@ -173,7 +165,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     themeBtn.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
   });
 
-  // Горячие клавиши
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey) {
       switch(e.key) {

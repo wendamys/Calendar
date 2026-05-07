@@ -12,9 +12,7 @@ async function renderCalendar() {
     emptyCell.addEventListener('click', async () => {
       await renderUserListModal();
       document.getElementById('switchUserModal').classList.add('active');
-      setTimeout(() => {
-        document.getElementById('newUserFirstName').focus();
-      }, 300);
+      setTimeout(() => document.getElementById('newUserFirstName').focus(), 300);
     });
     emptyRow.appendChild(emptyCell);
     tbody.appendChild(emptyRow);
@@ -159,8 +157,11 @@ async function prevMonth() {
   currentYear = ny;
   selectedDate = new Date(currentYear, currentMonth, 1);
 
-  const targetUserId = activeUserId || currentUser.id;
-  await loadEventsForUser(targetUserId);
+  if (activeUserIds.length > 0) {
+    await loadEventsForSelectedUsers();
+  } else {
+    await loadEventsForUser(currentUser.id);
+  }
   await loadAllFriendsEventsCount();
   refreshFutureCache();
   await renderCalendar();
@@ -175,8 +176,11 @@ async function nextMonth() {
   currentYear = ny;
   selectedDate = new Date(currentYear, currentMonth, 1);
 
-  const targetUserId = activeUserId || currentUser.id;
-  await loadEventsForUser(targetUserId);
+  if (activeUserIds.length > 0) {
+    await loadEventsForSelectedUsers();
+  } else {
+    await loadEventsForUser(currentUser.id);
+  }
   await loadAllFriendsEventsCount();
   refreshFutureCache();
   await renderCalendar();
