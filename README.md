@@ -47,6 +47,13 @@
 ↓
 (Уведомления / Логи)
 
+
+
+---
+
+## 📁 Структура проекта
+
+```plaintext
 calendar-app/
 ├── frontend/                    # 🎨 Клиентская часть приложения (UI)
 │   ├── src/                     # Исходный код фронтенда
@@ -73,27 +80,17 @@ calendar-app/
 ├── .env.example                 # 🔑 Шаблон переменных окружения (пароли, порты)
 └── README.md                    # 📖 Документация проекта
 
-📝 Пояснения к ключевым файлам:
-Файл / Папка
-Назначение
-frontend/src/js/
-Здесь хранится логика календаря: отрисовка сетки, обработка кликов, отправка запросов на backend
-frontend/src/css/
-Стили для календаря, модальных окон, адаптивная верстка
-backend/app/routes/
-REST API эндпоинты: GET /events, POST /events, DELETE /events/:id
-backend/app/models/
-Схемы данных для событий (название, дата, описание, участники)
-backend/app/services/
-Сервисы для работы с Kafka (отправка уведомлений) и базой данных
-nginx/nginx.conf
-Настройка проксирования: /api → backend, / → frontend
-kafka/docker-compose.kafka.yml
-Отдельный compose-файл для запуска Kafka + Zookeeper
-docker-compose.yml
-Запускает все сервисы одной командой: docker-compose up
-.env.example
-Пример конфигурации, который нужно скопировать в .env и заполнить своими данными
+📝 Пояснения к ключевым файлам
+Файл / Папка	Назначение
+frontend/src/js/	Здесь хранится логика календаря: отрисовка сетки, обработка кликов, отправка запросов на backend
+frontend/src/css/	Стили для календаря, модальных окон, адаптивная вёрстка
+backend/app/routes/	REST API эндпоинты: GET /events, POST /events, DELETE /events/:id
+backend/app/models/	Схемы данных для событий (название, дата, описание, участники)
+backend/app/services/	Сервисы для работы с Kafka (отправка уведомлений) и базой данных
+nginx/nginx.conf	Настройка проксирования: /api → backend, / → frontend
+kafka/docker-compose.kafka.yml	Отдельный compose-файл для запуска Kafka + Zookeeper
+docker-compose.yml	Запускает все сервисы одной командой: docker-compose up
+.env.example	Пример конфигурации, который нужно скопировать в .env и заполнить своими данными
 
 ## 🛠️ Возможности
 ✅ Создание, редактирование и удаление событий
